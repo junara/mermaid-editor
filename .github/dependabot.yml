@@ -1,0 +1,32 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    # 個人ツールのため PR 数を抑える。関連するパッケージはまとめて 1 本にする
+    groups:
+      codemirror:
+        patterns:
+          - '@codemirror/*'
+          - codemirror-lang-mermaid
+      tooling:
+        patterns:
+          - oxlint
+          - oxlint-tsgolint
+          - oxfmt
+          - typescript
+          - vite
+          - vitest
+          - jsdom
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns:
+          - '*'
