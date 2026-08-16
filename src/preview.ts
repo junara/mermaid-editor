@@ -108,6 +108,8 @@ export async function renderDiagram(code: string): Promise<RenderResult> {
 export interface Debounced<A extends unknown[]> {
   (...args: A): void
   cancel(): void
+  /** 待機中の呼び出しがあれば直ちに実行する。保留がなければ何もしない。 */
+  flush(): void
 }
 
 /** 最後の呼び出しから wait ms 経過後に fn を 1 回だけ実行する。 */
@@ -116,20 +118,30 @@ export function debounce<A extends unknown[]>(
   wait: number,
 ): Debounced<A> {
   let timer: ReturnType<typeof setTimeout> | undefined
+  let pending: A | undefined
+
+  const clear = (): void => {
+    if (timer !== undefined) clearTimeout(timer)
+    timer = undefined
+    pending = undefined
+  }
 
   const wrapped = (...args: A): void => {
     if (timer !== undefined) clearTimeout(timer)
+    pending = args
     timer = setTimeout(() => {
-      timer = undefined
+      clear()
       fn(...args)
     }, wait)
   }
 
-  wrapped.cancel = (): void => {
-    if (timer !== undefined) {
-      clearTimeout(timer)
-      timer = undefined
-    }
+  wrapped.cancel = clear
+
+  wrapped.flush = (): void => {
+    if (pending === undefined) return
+    const args = pending
+    clear()
+    fn(...args)
   }
 
   return wrapped

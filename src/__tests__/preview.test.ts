@@ -152,6 +152,44 @@ describe('debounce', () => {
     expect(spy).not.toHaveBeenCalled()
   })
 
+  it('flush で待機中の呼び出しを直ちに実行する', () => {
+    const spy = vi.fn<(value: string) => void>()
+    const debounced = debounce(spy, 1000)
+
+    debounced('a')
+    debounced('b')
+    debounced.flush()
+
+    expect(spy).toHaveBeenCalledTimes(1)
+    expect(spy).toHaveBeenCalledWith('b')
+
+    // flush 後にタイマーが残っていて二重実行されないこと
+    vi.advanceTimersByTime(2000)
+    expect(spy).toHaveBeenCalledTimes(1)
+  })
+
+  it('待機中の呼び出しがなければ flush は何もしない', () => {
+    const spy = vi.fn<() => void>()
+    const debounced = debounce(spy, 300)
+
+    debounced.flush()
+    expect(spy).not.toHaveBeenCalled()
+
+    debounced()
+    vi.advanceTimersByTime(300)
+    debounced.flush()
+    expect(spy).toHaveBeenCalledTimes(1)
+  })
+
+  it('cancel 後は flush しても実行されない', () => {
+    const spy = vi.fn<() => void>()
+    const debounced = debounce(spy, 300)
+    debounced()
+    debounced.cancel()
+    debounced.flush()
+    expect(spy).not.toHaveBeenCalled()
+  })
+
   it('間隔が空けば都度実行する', () => {
     const spy = vi.fn<() => void>()
     const debounced = debounce(spy, 300)
