@@ -1,8 +1,16 @@
+# 依存とビルド成果物
 node_modules/
 dist/
+coverage/
+*.tsbuildinfo
+
+# 秘匿情報・デプロイ作業ディレクトリ
 .env
 .env.*
 .wrangler/
+
+# エディタ・ツール・OS
+.idea/
 .claude/
 .DS_Store
 *.log
