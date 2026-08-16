@@ -179,5 +179,7 @@ export function downloadBlob(blob: Blob, fileName: string): void {
   document.body.append(anchor)
   anchor.click()
   anchor.remove()
-  URL.revokeObjectURL(url)
+  // click() で開始したダウンロードが読み取り中に URL を解放すると
+  // 中断されることがあるため、解放は次のタスク以降に遅らせる
+  setTimeout(() => URL.revokeObjectURL(url), 60_000)
 }
