@@ -53,7 +53,6 @@ let zoom = 1
 
 function showError(message: string | null): void {
   statusError.textContent = message ?? ''
-  statusError.classList.toggle('is-visible', message !== null)
 }
 
 function showSaveState(message: string, tone: 'normal' | 'warning' = 'normal'): void {
@@ -92,8 +91,17 @@ function paint(svgText: string): void {
   applyZoom()
 }
 
+/** 最後に開始したレンダリングの識別子。古い結果の取り込みを防ぐために使う。 */
+let renderToken = 0
+
 async function render(code: string): Promise<void> {
+  const token = ++renderToken
   const result = await renderDiagram(code)
+
+  // レンダリング時間は図の規模で大きく変わるため、先に開始した処理が後から
+  // 完了しうる。古い結果で新しい表示を上書きしないよう破棄する。
+  if (token !== renderToken) return
+
   if (result.ok) {
     lastValidSvg = result.svg
     showError(null)
@@ -128,6 +136,12 @@ createEditor({
 
 void render(initialDocument)
 
+// 保存の debounce は 1 秒あるため、直後にタブを閉じると最後の編集が失われる。
+// bfcache でも確実に発火する pagehide で保留分を書き出す。
+window.addEventListener('pagehide', () => {
+  saveLater.flush()
+})
+
 // ---------------------------------------------------------------- 分割比率
 
 function applyRatio(ratio: number): void {
@@ -157,6 +171,8 @@ previewPane.addEventListener(
   (event) => {
     // Cmd(macOS)/Ctrl(ピンチ操作)押下時のみズーム。通常のスクロールは妨げない
     if (!event.metaKey && !event.ctrlKey) return
+    // 横スクロール(deltaY === 0)ではズームしない
+    if (event.deltaY === 0) return
     event.preventDefault()
     setZoom(stepZoom(zoom, event.deltaY > 0 ? -1 : 1))
   },
