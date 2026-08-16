@@ -15,7 +15,11 @@ if ! command -v node >/dev/null 2>&1; then
   exit 1
 fi
 
-mapfile -t staged < <(
+# macOS 標準の bash は 3.2 で mapfile を持たないため、read でループする
+staged=()
+while IFS= read -r file; do
+  [ -n "$file" ] && staged+=("$file")
+done < <(
   git diff --cached --name-only --diff-filter=ACMR \
     -- '*.ts' '*.js' '*.mjs' '*.cjs' '*.css' '*.json' '*.jsonc'
 )
