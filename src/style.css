@@ -174,14 +174,35 @@ body.is-dragging {
 
 .status-error {
   color: var(--color-error);
+  /* 伸縮してエラー以外の項目を右端へ押し出す */
   flex: 1 1 auto;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/* 幅が足りないときはこの説明から先に省略する */
+.status-note {
+  flex: 0 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-link {
+  flex: 0 0 auto;
+  color: var(--color-muted);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+
+.status-link:hover,
+.status-link:focus-visible {
+  color: var(--color-accent);
+  border-bottom-color: currentcolor;
+}
+
 .status-save {
-  margin-left: auto;
   flex: 0 0 auto;
 }
 
