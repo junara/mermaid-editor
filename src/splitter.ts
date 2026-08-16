@@ -59,19 +59,32 @@ export function createSplitter({
     apply(ratioFromPointer(event.clientX, container.getBoundingClientRect()))
   }
 
-  const stopDragging = (event: PointerEvent): void => {
-    handle.releasePointerCapture?.(event.pointerId)
+  /** ドラッグ用のリスナと表示状態を元に戻す。何度呼んでも安全。 */
+  const endDrag = (): void => {
     handle.removeEventListener('pointermove', handlePointerMove)
     handle.removeEventListener('pointerup', stopDragging)
     handle.removeEventListener('pointercancel', stopDragging)
     document.body.classList.remove('is-dragging')
+  }
+
+  const stopDragging = (event: PointerEvent): void => {
+    // pointercancel 後はポインタが非アクティブになり、releasePointerCapture は
+    // NotFoundError を投げる。後片付けが飛ばないよう捕捉中か確認してから解除する。
+    if (handle.hasPointerCapture?.(event.pointerId)) {
+      handle.releasePointerCapture(event.pointerId)
+    }
+    endDrag()
     onCommit(ratio)
   }
 
   const handlePointerDown = (event: PointerEvent): void => {
     if (event.button !== 0) return
     event.preventDefault()
-    handle.setPointerCapture?.(event.pointerId)
+    try {
+      handle.setPointerCapture?.(event.pointerId)
+    } catch {
+      // キャプチャできなくてもハンドル上のドラッグは成立するため続行する
+    }
     handle.addEventListener('pointermove', handlePointerMove)
     handle.addEventListener('pointerup', stopDragging)
     handle.addEventListener('pointercancel', stopDragging)
@@ -87,6 +100,11 @@ export function createSplitter({
     onCommit(ratio)
   }
 
+  // ARIA の上下限は TypeScript 側の定数を唯一の出所とする(HTML との二重管理を避ける)
+  handle.setAttribute('aria-valuemin', String(Math.round(MIN_RATIO * 100)))
+  handle.setAttribute('aria-valuemax', String(Math.round(MAX_RATIO * 100)))
+  handle.setAttribute('aria-valuenow', String(Math.round(ratio * 100)))
+
   handle.addEventListener('pointerdown', handlePointerDown)
   handle.addEventListener('keydown', handleKeyDown)
 
@@ -94,6 +112,8 @@ export function createSplitter({
     getRatio: () => ratio,
     setRatio: (next: number) => apply(next),
     destroy: () => {
+      // ドラッグ中に破棄されても追従し続けないよう、進行中の操作も終了させる
+      endDrag()
       handle.removeEventListener('pointerdown', handlePointerDown)
       handle.removeEventListener('keydown', handleKeyDown)
     },

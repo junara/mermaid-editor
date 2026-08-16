@@ -135,4 +135,32 @@ describe('createSplitter', () => {
     handle.dispatchEvent(pointerEvent('pointermove', { clientX: 700 } as Partial<PointerEvent>))
     expect(onChange).not.toHaveBeenCalled()
   })
+
+  it('ドラッグ中に destroy しても追従を止める', () => {
+    const { handle, onChange, controller } = setup()
+    handle.dispatchEvent(pointerEvent('pointerdown'))
+    controller.destroy()
+    onChange.mockClear()
+
+    handle.dispatchEvent(pointerEvent('pointermove', { clientX: 700 } as Partial<PointerEvent>))
+    expect(onChange).not.toHaveBeenCalled()
+    expect(document.body.classList.contains('is-dragging')).toBe(false)
+  })
+
+  it('pointercancel でも後片付けと commit を行う', () => {
+    const { handle, onCommit } = setup()
+    handle.dispatchEvent(pointerEvent('pointerdown'))
+    handle.dispatchEvent(pointerEvent('pointermove', { clientX: 300 } as Partial<PointerEvent>))
+    handle.dispatchEvent(pointerEvent('pointercancel'))
+
+    expect(onCommit).toHaveBeenCalledWith(0.3)
+    expect(document.body.classList.contains('is-dragging')).toBe(false)
+  })
+
+  it('ARIA の上下限を定数から設定する', () => {
+    const { handle } = setup()
+    expect(handle.getAttribute('aria-valuemin')).toBe(String(MIN_RATIO * 100))
+    expect(handle.getAttribute('aria-valuemax')).toBe(String(MAX_RATIO * 100))
+    expect(handle.getAttribute('aria-valuenow')).toBe(String(DEFAULT_RATIO * 100))
+  })
 })
