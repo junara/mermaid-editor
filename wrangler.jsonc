@@ -1,0 +1,11 @@
+{
+  // Worker スクリプトは持たず、Static Assets で dist/ を配信するだけの構成
+  "name": "mermaid-editor",
+  "compatibility_date": "2026-08-01",
+  "assets": {
+    "directory": "./dist",
+  },
+  "routes": [{ "pattern": "mmd.junara.dev", "custom_domain": true }],
+  // *.workers.dev の既定 URL は使わない
+  "workers_dev": false,
+}
