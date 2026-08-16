@@ -1,0 +1,190 @@
+:root {
+  --color-bg: #ffffff;
+  --color-surface: #f8f9fa;
+  --color-border: #dee2e6;
+  --color-text: #212529;
+  --color-muted: #868e96;
+  --color-accent: #1c7ed6;
+  --color-error: #e03131;
+  --color-warning: #e8590c;
+  --toolbar-height: 44px;
+  --statusbar-height: 26px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  overflow: hidden;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* ------------------------------------------------------------------ toolbar */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: var(--toolbar-height);
+  padding: 0 12px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  flex: 0 0 auto;
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+.toolbar-group--right {
+  margin-left: auto;
+}
+
+.toolbar button {
+  font: inherit;
+  font-size: 12px;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.toolbar button:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.toolbar button:active {
+  background: var(--color-surface);
+}
+
+.toolbar select {
+  font: inherit;
+  font-size: 12px;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  padding: 4px 6px;
+}
+
+#zoom-value {
+  display: inline-block;
+  min-width: 42px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* -------------------------------------------------------------------- panes */
+
+.panes {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.pane {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.pane--editor {
+  flex: 0 0 50%;
+  display: flex;
+  flex-direction: column;
+}
+
+.pane--editor .cm-editor {
+  flex: 1 1 auto;
+  min-height: 0;
+  outline: none;
+}
+
+.pane--preview {
+  flex: 1 1 auto;
+  overflow: auto;
+  background: var(--color-bg);
+}
+
+.preview-stage {
+  display: inline-block;
+  padding: 16px;
+}
+
+.preview-stage svg {
+  display: block;
+  max-width: none;
+}
+
+/* ----------------------------------------------------------------- splitter */
+
+.splitter {
+  flex: 0 0 6px;
+  cursor: col-resize;
+  background: var(--color-border);
+  border: none;
+  outline: none;
+}
+
+.splitter:hover,
+.splitter:focus-visible {
+  background: var(--color-accent);
+}
+
+body.is-dragging {
+  cursor: col-resize;
+  user-select: none;
+}
+
+/* ---------------------------------------------------------------- statusbar */
+
+.statusbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: var(--statusbar-height);
+  padding: 0 12px;
+  font-size: 11px;
+  color: var(--color-muted);
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  flex: 0 0 auto;
+}
+
+.status-error {
+  color: var(--color-error);
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-save {
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.status-save.is-warning {
+  color: var(--color-warning);
+}
