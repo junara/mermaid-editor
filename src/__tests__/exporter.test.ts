@@ -4,9 +4,13 @@ import {
   buildFileName,
   FALLBACK_SIZE,
   formatTimestamp,
+  isCanvasSizeSupported,
+  MAX_CANVAS_AREA,
+  MAX_CANVAS_DIMENSION,
   parseSvgSize,
   resizeSvg,
   svgToBlob,
+  svgToPngBlob,
   toSvgDataUrl,
 } from '../exporter'
 
@@ -113,6 +117,44 @@ describe('toSvgDataUrl', () => {
     expect(url.startsWith('data:image/svg+xml;charset=utf-8,')).toBe(true)
     expect(url).not.toContain(' ')
     expect(decodeURIComponent(url.split(',')[1] as string)).toBe('<svg><text>a b</text></svg>')
+  })
+})
+
+describe('isCanvasSizeSupported', () => {
+  it('通常のサイズは描画可能とみなす', () => {
+    expect(isCanvasSizeSupported(320, 180)).toBe(true)
+    expect(isCanvasSizeSupported(4000, 4000)).toBe(true)
+  })
+
+  it('総ピクセル数の上限を超えたら false', () => {
+    // 20000x20000 = 4 億画素。ブラウザは例外を投げず描画内容だけを失う
+    expect(isCanvasSizeSupported(20_000, 20_000)).toBe(false)
+    expect(isCanvasSizeSupported(MAX_CANVAS_AREA / 2, 3)).toBe(false)
+  })
+
+  it('1 辺の上限を超えたら false', () => {
+    expect(isCanvasSizeSupported(MAX_CANVAS_DIMENSION + 1, 1)).toBe(false)
+    expect(isCanvasSizeSupported(1, MAX_CANVAS_DIMENSION + 1)).toBe(false)
+  })
+
+  it('境界値は描画可能とみなす', () => {
+    expect(isCanvasSizeSupported(MAX_CANVAS_DIMENSION, 1)).toBe(true)
+    expect(isCanvasSizeSupported(16_384, 16_384)).toBe(true)
+  })
+
+  it('0 以下は false', () => {
+    expect(isCanvasSizeSupported(0, 100)).toBe(false)
+    expect(isCanvasSizeSupported(100, -1)).toBe(false)
+  })
+})
+
+describe('svgToPngBlob', () => {
+  it('Canvas の上限を超える場合は空の PNG を作らず例外にする', async () => {
+    // 6000x5000 の図を 3x にすると 18000x15000 = 2.7 億画素で上限を超える
+    const huge = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 6000 5000"></svg>'
+    await expect(svgToPngBlob(huge, { scale: 3, background: 'transparent' })).rejects.toThrow(
+      '出力サイズが大きすぎます',
+    )
   })
 })
 

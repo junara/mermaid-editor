@@ -139,9 +139,36 @@ export interface PngOptions {
   background: PngBackground
 }
 
+/** Canvas の 1 辺の上限。 */
+export const MAX_CANVAS_DIMENSION = 32_767
+/** Canvas の総ピクセル数の上限。 */
+export const MAX_CANVAS_AREA = 268_435_456
+
+/**
+ * 指定サイズの Canvas に描画できるとみなせるか。
+ *
+ * ブラウザは上限を超えた Canvas でも width/height の設定を受け付け、例外も投げない。
+ * 描画内容だけが黙って失われるため(= 中身が空の PNG になる)、事前に弾く必要がある。
+ * 値は主要ブラウザで文書化されている上限に合わせた保守的なもの。
+ */
+export function isCanvasSizeSupported(width: number, height: number): boolean {
+  return (
+    width > 0 &&
+    height > 0 &&
+    width <= MAX_CANVAS_DIMENSION &&
+    height <= MAX_CANVAS_DIMENSION &&
+    width * height <= MAX_CANVAS_AREA
+  )
+}
+
 /** SVG を Canvas 経由でラスタライズして PNG の Blob を返す。 */
 export async function svgToPngBlob(svgText: string, options: PngOptions): Promise<Blob> {
   const { markup, width, height } = resizeSvg(svgText, options.scale)
+
+  if (!isCanvasSizeSupported(width, height)) {
+    throw new Error(`出力サイズが大きすぎます(${width}×${height}px)。スケールを下げてください`)
+  }
+
   const image = await loadImage(toSvgDataUrl(markup))
 
   const canvas = document.createElement('canvas')
