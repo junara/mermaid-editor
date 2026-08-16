@@ -1,7 +1,10 @@
-.PHONY: install dev build test fmt lint check deploy
+.PHONY: install setup dev build test fmt lint check deploy
 
-install: ## 依存パッケージをインストール
+install: ## 依存パッケージをインストール(pre-commit フックも有効化される)
 	npm ci
+
+setup: ## pre-commit フックを有効化(npm install 済みなら不要)
+	git config core.hooksPath .githooks
 
 dev: ## vite 開発サーバー起動
 	npm run dev

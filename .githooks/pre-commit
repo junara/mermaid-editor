@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+#
+# コミット前にフォーマット・lint・型チェック・テストを実行する。
+# 有効化は `npm install`(prepare スクリプト)または `make setup` で行う。
+# 一時的に飛ばしたい場合は `git commit --no-verify`。
+set -euo pipefail
+
+# JetBrains などの GUI から git が起動されると PATH に node が無いことがあるため mise から取り込む
+if command -v mise >/dev/null 2>&1; then
+  eval "$(mise env -s bash)" 2>/dev/null || true
+fi
+
+if ! command -v node >/dev/null 2>&1; then
+  echo "pre-commit: node が見つかりません。mise install を実行してください" >&2
+  exit 1
+fi
+
+mapfile -t staged < <(
+  git diff --cached --name-only --diff-filter=ACMR \
+    -- '*.ts' '*.js' '*.mjs' '*.cjs' '*.css' '*.json' '*.jsonc'
+)
+
+if [ ${#staged[@]} -gt 0 ]; then
+  # 一部だけステージされたファイルを自動整形すると未ステージ分まで巻き込んでしまうため中断する
+  partial=()
+  while IFS= read -r modified; do
+    for file in "${staged[@]}"; do
+      [ "$file" = "$modified" ] && partial+=("$file")
+    done
+  done < <(git diff --name-only)
+
+  if [ ${#partial[@]} -gt 0 ]; then
+    echo "pre-commit: 次のファイルはステージ済みの内容と作業ツリーの内容が異なります:" >&2
+    printf '  %s\n' "${partial[@]}" >&2
+    echo "自動整形が未ステージの変更を巻き込むため中断しました。すべてステージするか、退避してください。" >&2
+    exit 1
+  fi
+
+  # ステージされたファイルだけを整形し、整形結果をコミットに含める
+  npx --no-install oxfmt "${staged[@]}" >/dev/null
+  git add -- "${staged[@]}"
+fi
+
+npm run --silent lint
+npx --no-install tsc --noEmit
+npm test --silent
