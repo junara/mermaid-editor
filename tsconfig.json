@@ -20,7 +20,8 @@
     "noUncheckedIndexedAccess": true,
 
     // vite/client は *.css 等のアセットの型宣言を提供する(TypeScript 7 では未宣言の副作用 import がエラーになる)
-    "types": ["vitest/globals", "vite/client"]
+    // vite-plugin-pwa/client は virtual:pwa-register の型宣言を提供する
+    "types": ["vitest/globals", "vite/client", "vite-plugin-pwa/client"]
   },
   "include": ["src", "vite.config.ts"]
 }

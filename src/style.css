@@ -202,6 +202,25 @@ body.is-dragging {
   border-bottom-color: currentcolor;
 }
 
+/* 新しい版が待機中のときだけ表示する。hidden 属性で出し入れする */
+.status-update {
+  flex: 0 0 auto;
+  padding: 0 8px;
+  font: inherit;
+  line-height: calc(var(--statusbar-height) - 8px);
+  color: var(--color-accent);
+  background: var(--color-bg);
+  border: 1px solid var(--color-accent);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.status-update:hover,
+.status-update:focus-visible {
+  color: var(--color-bg);
+  background: var(--color-accent);
+}
+
 .status-save {
   flex: 0 0 auto;
 }
