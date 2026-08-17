@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Mermaid エディタ">
+  <!-- マスク適用時に切り落とされないよう、図形を安全領域(中央 80% の円)に収まる倍率へ縮小する -->
+  <rect width="512" height="512" fill="#1c7ed6" />
+  <g transform="translate(256 256) scale(0.82) translate(-256 -256)">
+    <g fill="none" stroke="#ffffff" stroke-width="24" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M256 204 V252" />
+      <path d="M144 252 H368" />
+      <path d="M144 252 V276" />
+      <path d="M368 252 V276" />
+    </g>
+    <g fill="#ffffff">
+      <path d="M120 272 H168 L144 308 Z" />
+      <path d="M344 272 H392 L368 308 Z" />
+      <rect x="176" y="116" width="160" height="88" rx="20" />
+      <rect x="64" y="308" width="160" height="88" rx="20" />
+      <rect x="288" y="308" width="160" height="88" rx="20" />
+    </g>
+  </g>
+</svg>

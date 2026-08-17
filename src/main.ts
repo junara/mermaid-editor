@@ -11,6 +11,12 @@ import {
   type Size,
 } from './exporter'
 import {
+  consumeLaunchFiles,
+  needsReplaceConfirmation,
+  normalizeIncomingText,
+  parseSharedText,
+} from './launch'
+import {
   clampZoom,
   debounce,
   RENDER_DEBOUNCE_MS,
@@ -18,6 +24,7 @@ import {
   SAVE_DEBOUNCE_MS,
   stepZoom,
 } from './preview'
+import { setupPwa } from './pwa'
 import { clampRatio, createSplitter, DEFAULT_RATIO } from './splitter'
 import {
   loadDocumentOrSample,
@@ -40,6 +47,7 @@ const panes = requireElement('panes')
 const splitterHandle = requireElement('splitter')
 const statusError = requireElement('status-error')
 const statusSave = requireElement('status-save')
+const statusUpdate = requireElement<HTMLButtonElement>('status-update')
 const scaleSelect = requireElement<HTMLSelectElement>('png-scale')
 const backgroundSelect = requireElement<HTMLSelectElement>('png-background')
 const zoomValue = requireElement('zoom-value')
@@ -124,7 +132,7 @@ const saveLater = debounce((code: string) => {
 
 const initialDocument = loadDocumentOrSample()
 
-createEditor({
+const editorView = createEditor({
   parent: editorPane,
   doc: initialDocument,
   onChange: (value) => {
@@ -220,3 +228,59 @@ requireElement('export-png').addEventListener('click', () => {
     }
   })()
 })
+
+// ---------------------------------------------------------------- PWA
+
+/** 更新の適用処理。待機中の版がないうちは null。 */
+let applyUpdate: (() => void) | null = null
+
+// 更新が複数回検知されてもハンドラを増やさないよう、登録は 1 度だけにする
+statusUpdate.addEventListener('click', () => applyUpdate?.())
+
+setupPwa({
+  onUpdateAvailable: (apply) => {
+    applyUpdate = apply
+    statusUpdate.hidden = false
+  },
+})
+
+// ---------------------------------------------------------------- 外部からの入力
+
+// 取り込みは確認ダイアログでメインスレッドを止めるため、他の初期化がすべて済んだ
+// この位置で行う。途中に置くと、ダイアログ表示中は Service Worker の登録や
+// エクスポート・ズームの配線が終わっていない状態になる。
+
+/** エディタの内容を丸ごと置き換える。保存と再描画は onChange 経由で走る。 */
+function replaceDocument(text: string): void {
+  editorView.dispatch({
+    changes: { from: 0, to: editorView.state.doc.length, insert: text },
+    selection: { anchor: 0 },
+  })
+}
+
+/**
+ * ファイル(file_handlers)や共有メニュー(share_target)から受け取ったテキストを取り込む。
+ * 保存先は localStorage の 1 文書だけで置き換えは破壊的なため、未編集でない限り確認する。
+ */
+function acceptIncomingDocument(text: string): void {
+  const next = normalizeIncomingText(text)
+  if (next === '') return
+  // ファイル起動時は前回の保存内容が復元された直後で「編集中」とは限らないため、
+  // 文言は「現在の内容」とする
+  if (
+    needsReplaceConfirmation(editorView.state.doc.toString()) &&
+    !window.confirm('現在の内容を破棄して開きますか?')
+  ) {
+    return
+  }
+  replaceDocument(next)
+}
+
+consumeLaunchFiles({ onText: acceptIncomingDocument, onError: showError })
+
+const sharedText = parseSharedText(window.location.search)
+if (sharedText !== null) {
+  // 再読み込みで同じテキストを再度取り込まないよう、先にクエリを URL から取り除く
+  window.history.replaceState(null, '', window.location.pathname)
+  acceptIncomingDocument(sharedText)
+}
