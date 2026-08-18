@@ -35,6 +35,9 @@ Service Worker は放置すると古い版を掴み続けるため、明示的�
 - `registerType: 'prompt'` を使い、新しい Service Worker が waiting 状態になったら通知する。
 - ステータスバーに「更新があります / 再読み込み」を表示し、クリックで `skipWaiting` してリロードする。
 - 編集中に勝手にリロードしない。CodeMirror の undo 履歴とカーソル位置を保護するため。
+- 更新を適用するまで古い版を掴み続けるため、ステータスバーに動作中の版を常時表示する。
+  `package.json` の version はデプロイのたびには上がらないので、ビルド日時を併記して見分ける
+  (`vite.config.ts` の `define` で埋め込み、`src/version.ts` で整形する)。
 
 ## 3. OS 連携
 

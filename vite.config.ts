@@ -1,7 +1,16 @@
 import { VitePWA } from 'vite-plugin-pwa'
 import { defineConfig } from 'vitest/config'
 
+import packageJson from './package.json' with { type: 'json' }
+
 export default defineConfig({
+  // ビルド時に埋め込む版情報。src/version.ts の declare const と対応させること。
+  // version はデプロイのたびには上がらないため、PWA が掴んでいる版が最新かどうかは
+  // ビルド日時で見分ける
+  define: {
+    __APP_VERSION__: JSON.stringify(packageJson.version),
+    __APP_BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+  },
   build: {
     // mermaid.js が支配的でバンドルサイズの上限は設けない方針のため、警告は抑制する
     chunkSizeWarningLimit: 4000,

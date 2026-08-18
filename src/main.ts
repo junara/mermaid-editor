@@ -33,6 +33,7 @@ import {
   saveSplitRatio,
   type SaveResult,
 } from './storage'
+import { APP_BUILD_TIME, APP_VERSION, formatVersionLabel, formatVersionTitle } from './version'
 
 function requireElement<T extends HTMLElement>(id: string): T {
   const element = document.getElementById(id)
@@ -51,6 +52,7 @@ const statusUpdate = requireElement<HTMLButtonElement>('status-update')
 const scaleSelect = requireElement<HTMLSelectElement>('png-scale')
 const backgroundSelect = requireElement<HTMLSelectElement>('png-background')
 const zoomValue = requireElement('zoom-value')
+const statusVersion = requireElement('status-version')
 
 /** 直近に描画に成功した SVG(mermaid の出力そのまま)。構文エラー時も保持する。 */
 let lastValidSvg: string | null = null
@@ -58,6 +60,10 @@ let naturalSize: Size = { width: 0, height: 0 }
 let zoom = 1
 
 // ---------------------------------------------------------------- ステータスバー
+
+// PWA は明示的に更新するまで古い版を掴み続けるため、いま動いている版を常に見せる
+statusVersion.textContent = formatVersionLabel(APP_VERSION, APP_BUILD_TIME)
+statusVersion.title = formatVersionTitle(APP_VERSION, APP_BUILD_TIME)
 
 function showError(message: string | null): void {
   statusError.textContent = message ?? ''

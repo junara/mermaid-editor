@@ -163,7 +163,7 @@ body.is-dragging {
   display: flex;
   align-items: center;
   gap: 12px;
-  height: var(--statusbar-height);
+  min-height: var(--statusbar-height);
   padding: 0 12px;
   font-size: 11px;
   color: var(--color-muted);
@@ -181,16 +181,21 @@ body.is-dragging {
   white-space: nowrap;
 }
 
-/* 幅が足りないときはこの説明から先に省略する */
+/* 幅が足りないときはこの説明から先に省略する(縮小率を上げて他の項目より先に潰す) */
 .status-note {
-  flex: 0 1 auto;
+  flex: 0 20 auto;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/* 注記の次に優先度が低い。版や作成者より先に縮める */
 .status-link {
-  flex: 0 0 auto;
+  flex: 0 5 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--color-muted);
   text-decoration: none;
   border-bottom: 1px solid transparent;
@@ -200,6 +205,20 @@ body.is-dragging {
 .status-link:focus-visible {
   color: var(--color-accent);
   border-bottom-color: currentcolor;
+}
+
+/* 作成者と版。長くなっても他の項目を画面外へ押し出さないよう、最後は省略に逃がす */
+.status-meta {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#status-version {
+  font-variant-numeric: tabular-nums;
+  cursor: help;
 }
 
 /* 新しい版が待機中のときだけ表示する。hidden 属性で出し入れする */
@@ -227,4 +246,22 @@ body.is-dragging {
 
 .status-save.is-warning {
   color: var(--color-warning);
+}
+
+/*
+ * 幅が足りないと、右側の更新ボタンと保存状態が画面外へ押し出される。
+ * body は overflow: hidden でスクロールできないため、そのままでは更新が適用できなくなる。
+ * 折り返して縦に伸ばす(.panes が縮んで吸収する)。
+ */
+@media (max-width: 640px) {
+  .statusbar {
+    flex-wrap: wrap;
+    row-gap: 2px;
+    padding-block: 3px;
+  }
+
+  /* 折り返しの行数を抑えるため、元々「最初に省略する」方針のこの説明から落とす */
+  .status-note {
+    display: none;
+  }
 }
