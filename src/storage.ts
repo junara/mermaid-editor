@@ -98,3 +98,30 @@ export function loadSplitRatio(storage = defaultStorage()): number | null {
   if (!Number.isFinite(value) || value <= 0 || value >= 1) return null
   return value
 }
+
+export type ClearResult = { ok: true } | { ok: false; message: string }
+
+/** 本アプリが localStorage に持つキーの一覧(リセット対象の唯一の出所)。 */
+export const STORAGE_KEYS = [DOCUMENT_KEY, SPLIT_RATIO_KEY] as const
+
+/**
+ * 保存済みのデータをすべて削除し、初回起動と同じ状態に戻す。
+ * 途中で失敗しても中途半端な状態を残さないよう、全キーを試してから結果を返す。
+ */
+export function clearStoredData(storage = defaultStorage()): ClearResult {
+  if (!storage) {
+    return { ok: false, message: 'localStorage を利用できません' }
+  }
+  let failed = false
+  for (const key of STORAGE_KEYS) {
+    try {
+      storage.removeItem(key)
+    } catch {
+      failed = true
+    }
+  }
+  if (failed) {
+    return { ok: false, message: 'localStorage のデータを削除できませんでした' }
+  }
+  return { ok: true }
+}

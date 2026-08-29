@@ -27,8 +27,10 @@ import {
 import { setupPwa } from './pwa'
 import { clampRatio, createSplitter, DEFAULT_RATIO } from './splitter'
 import {
+  clearStoredData,
   loadDocumentOrSample,
   loadSplitRatio,
+  SAMPLE_DOCUMENT,
   saveDocument,
   saveSplitRatio,
   type SaveResult,
@@ -53,6 +55,7 @@ const scaleSelect = requireElement<HTMLSelectElement>('png-scale')
 const backgroundSelect = requireElement<HTMLSelectElement>('png-background')
 const zoomValue = requireElement('zoom-value')
 const statusVersion = requireElement('status-version')
+const resetButton = requireElement<HTMLButtonElement>('reset-data')
 
 /** 直近に描画に成功した SVG(mermaid の出力そのまま)。構文エラー時も保持する。 */
 let lastValidSvg: string | null = null
@@ -150,6 +153,14 @@ const editorView = createEditor({
 
 void render(initialDocument)
 
+/** エディタの内容を丸ごと置き換える。保存と再描画は onChange 経由で走る。 */
+function replaceDocument(text: string): void {
+  editorView.dispatch({
+    changes: { from: 0, to: editorView.state.doc.length, insert: text },
+    selection: { anchor: 0 },
+  })
+}
+
 // 保存の debounce は 1 秒あるため、直後にタブを閉じると最後の編集が失われる。
 // bfcache でも確実に発火する pagehide で保留分を書き出す。
 window.addEventListener('pagehide', () => {
@@ -235,6 +246,32 @@ requireElement('export-png').addEventListener('click', () => {
   })()
 })
 
+// ------------------------------------------------------------ データリセット
+
+/** 保存データを消し、初回起動と同じ状態(サンプル図・既定の分割比率・等倍)へ戻す。 */
+function resetData(): void {
+  if (!window.confirm('保存した内容と表示設定を消して、初期状態に戻しますか?')) return
+
+  // undo 履歴はあえて残す。誤ってリセットしてもエディタで元に戻せる復旧手段とするため。
+  // 元に戻した時点で自動保存が走り、リセット前の内容が localStorage へ書き戻る
+  replaceDocument(SAMPLE_DOCUMENT)
+  // 置き換えの onChange が保存を予約するため、削除より先に取り消す。残したままだと
+  // 1 秒後にサンプル図が書き戻され、次回起動が初回と同じにならない
+  saveLater.cancel()
+
+  const result = clearStoredData()
+  splitter.setRatio(DEFAULT_RATIO)
+  setZoom(1)
+
+  if (result.ok) {
+    showSaveState('リセットしました')
+  } else {
+    showSaveState(result.message, 'warning')
+  }
+}
+
+resetButton.addEventListener('click', resetData)
+
 // ---------------------------------------------------------------- PWA
 
 /** 更新の適用処理。待機中の版がないうちは null。 */
@@ -255,14 +292,6 @@ setupPwa({
 // 取り込みは確認ダイアログでメインスレッドを止めるため、他の初期化がすべて済んだ
 // この位置で行う。途中に置くと、ダイアログ表示中は Service Worker の登録や
 // エクスポート・ズームの配線が終わっていない状態になる。
-
-/** エディタの内容を丸ごと置き換える。保存と再描画は onChange 経由で走る。 */
-function replaceDocument(text: string): void {
-  editorView.dispatch({
-    changes: { from: 0, to: editorView.state.doc.length, insert: text },
-    selection: { anchor: 0 },
-  })
-}
 
 /**
  * ファイル(file_handlers)や共有メニュー(share_target)から受け取ったテキストを取り込む。
