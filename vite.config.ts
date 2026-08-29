@@ -25,11 +25,11 @@ export default defineConfig({
         // mermaid は図種ごとにチャンクを遅延ロードするため、コアだけをキャッシュすると
         // オフラインで未取得の図種を書いた瞬間に描画が失敗する。全成果物を precache する。
         // 拡張子を列挙する方式のため、漏れるとオフラインで静かに壊れる。
-        // 新しい種類のアセットを追加したらここも足すこと
+        // 新しい種類のアセットを追加したらここも足すこと。
+        // フォントのように今はまだ成果物に無い拡張子も含めるため、パターンを分けずに
+        // 1 本にまとめている(分けると 0 件のパターンが workbox の警告になる)
         globPatterns: [
-          '**/*.{js,css,html,json,wasm}',
-          '**/*.{svg,png,ico,jpg,jpeg,gif,webp,avif}',
-          '**/*.{woff,woff2,ttf,otf}',
+          '**/*.{js,css,html,json,wasm,svg,png,ico,jpg,jpeg,gif,webp,avif,woff,woff2,ttf,otf}',
         ],
         // 既定の上限(2MiB)を超えるチャンクが現れても precache から漏れないようにする
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
@@ -70,6 +70,9 @@ export default defineConfig({
         share_target: {
           action: '/',
           method: 'GET',
+          // GET では仕様上 application/x-www-form-urlencoded しか取れないが、
+          // 省略すると Chrome が既定値を補ったという警告を出すため明示する
+          enctype: 'application/x-www-form-urlencoded',
           params: { text: 'text' },
         },
       },
