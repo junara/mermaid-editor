@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  clearStoredData,
   DOCUMENT_KEY,
   isQuotaExceeded,
   loadDocument,
@@ -15,7 +16,10 @@ import {
 
 class FakeStorage implements StorageLike {
   readonly items = new Map<string, string>()
-  constructor(private readonly onSet?: (key: string, value: string) => void) {}
+  constructor(
+    private readonly onSet?: (key: string, value: string) => void,
+    private readonly onRemove?: (key: string) => void,
+  ) {}
 
   getItem(key: string): string | null {
     return this.items.get(key) ?? null
@@ -27,6 +31,7 @@ class FakeStorage implements StorageLike {
   }
 
   removeItem(key: string): void {
+    this.onRemove?.(key)
     this.items.delete(key)
   }
 }
@@ -131,5 +136,47 @@ describe('saveSplitRatio / loadSplitRatio', () => {
     expect(loadSplitRatio(storage)).toBeNull()
     storage.setItem(SPLIT_RATIO_KEY, '-0.5')
     expect(loadSplitRatio(storage)).toBeNull()
+  })
+})
+
+describe('clearStoredData', () => {
+  it('保存済みのキーをすべて削除する', () => {
+    const storage = new FakeStorage()
+    saveDocument('graph TD; A-->B', storage)
+    saveSplitRatio(0.42, storage)
+
+    expect(clearStoredData(storage)).toEqual({ ok: true })
+    expect(storage.items.size).toBe(0)
+    expect(loadDocument(storage)).toBeNull()
+    expect(loadSplitRatio(storage)).toBeNull()
+  })
+
+  it('削除後は初回起動と同じくサンプル図に戻る', () => {
+    const storage = new FakeStorage()
+    saveDocument('pie title x', storage)
+    clearStoredData(storage)
+    expect(loadDocumentOrSample(storage)).toBe(SAMPLE_DOCUMENT)
+  })
+
+  it('未保存でも成功として扱う', () => {
+    expect(clearStoredData(new FakeStorage())).toEqual({ ok: true })
+  })
+
+  it('一部の削除が失敗しても残りは削除して失敗を返す', () => {
+    const storage = new FakeStorage(undefined, (key) => {
+      if (key === DOCUMENT_KEY) throw new Error('denied')
+    })
+    saveDocument('graph TD; A-->B', storage)
+    saveSplitRatio(0.42, storage)
+
+    const result = clearStoredData(storage)
+    expect(result.ok).toBe(false)
+    expect(storage.getItem(DOCUMENT_KEY)).toBe('graph TD; A-->B')
+    expect(storage.getItem(SPLIT_RATIO_KEY)).toBeNull()
+  })
+
+  it('storage が使えない場合も例外を投げない', () => {
+    const result = clearStoredData(null)
+    expect(result.ok).toBe(false)
   })
 })
