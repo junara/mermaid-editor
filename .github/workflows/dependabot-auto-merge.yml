@@ -1,0 +1,36 @@
+name: Dependabot Auto Merge
+
+# Dependabot の PR 作成/更新ごとに判定する
+on: pull_request
+
+# Dependabot 由来の pull_request では GITHUB_TOKEN が既定で読み取り専用のため、
+# ここで明示的に書き込み権限を付与する
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    # Dependabot 以外の PR では何もしない
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      # ci.yml / deploy.yml と同じく SHA で固定する(更新は Dependabot が PR で出す)
+      - id: metadata
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # メジャー更新を確実に除外するため、minor / patch のときだけ許可する
+      # (グループ PR では update-type にグループ内の最大の変更種別が入るので、
+      #  1 つでもメジャーが混ざっていれば自動マージされない)
+      - name: 自動マージを予約する
+        if: |
+          steps.metadata.outputs.update-type == 'version-update:semver-minor' ||
+          steps.metadata.outputs.update-type == 'version-update:semver-patch'
+        # --auto なので、この時点で CI が終わっていなくてよい。
+        # 必須チェック(check)が成功した時点で GitHub 側がマージする
+        run: gh pr merge --auto --merge "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
