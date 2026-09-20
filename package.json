@@ -18,10 +18,10 @@
     "lint:fix": "oxlint --type-aware --fix"
   },
   "dependencies": {
-    "@codemirror/commands": "^6.11.0",
+    "@codemirror/commands": "^6.11.1",
     "@codemirror/language": "^6.12.4",
-    "@codemirror/state": "^6.7.4",
-    "@codemirror/view": "^6.43.11",
+    "@codemirror/state": "^6.7.5",
+    "@codemirror/view": "^6.43.12",
     "codemirror-lang-mermaid": "^0.5.0",
     "mermaid": "^11.17.2"
   },
